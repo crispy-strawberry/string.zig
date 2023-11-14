@@ -59,15 +59,13 @@ pub const String = struct {
     /// Create a new string from the supplied buffer, using the allocator provided.
     /// This function validates the string contents before writing them.
     /// In case the string does not contain valid UTF-8, it returns an error.
-    /// TODO: Actually validate the slice.
+    /// TODO: Validate the slice using own implemenation.
     pub fn fromUtf8(allocator: Allocator, buffer: []const u8) !String {
-        var string_buf = try String.fromUtf8Unchecked(allocator, buffer);
-
-        for (buffer) |char| {
-            _ = char;
+        if (std.unicode.utf8ValidateSlice(buffer)) {
+            return String.fromUtf8Unchecked(allocator, buffer);
+        } else {
+            return error.Utf8ValidationError;
         }
-
-        return string_buf;
     }
 
     /// Returns length of string in bytes
@@ -110,14 +108,14 @@ pub const String = struct {
     }
 
     /// Check if all characters are within ascii range.
-    /// *TODO*: Optimize using vectors
+    /// TODO: Optimize using vectors
     pub fn isAscii(self: *const String) bool {
         // const vec1 = @Vector(4, u8) { 123, 34, 65, 32 };
         // const vec2: @Vector(4, u8) = @splat(127);
         // const res = vec2 > vec1;
 
         for (self.buf.items) |char| {
-            if (char >= 128) {
+            if (char > 127) {
                 return false;
             }
         }
@@ -144,7 +142,7 @@ test "test is_ascii" {
     try testing.expectEqual(false, emoji_str.isAscii());
 
     var byte_str = [_]u8{ 67, 68, 69, 70 };
-    const my_str = try String.fromStr(alloc, byte_str[0..]);
+    const my_str = try String.fromUtf8(alloc, byte_str[0..]);
     defer my_str.deinit();
 
     std.debug.print("{s}\n", .{my_str.asBytes()});
