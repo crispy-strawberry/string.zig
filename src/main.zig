@@ -96,7 +96,7 @@ pub const String = struct {
     }
 
     pub fn intoBytes(self: *String) ![]u8 {
-        return try self.buf.toOwnedSlice(self.allocator);
+        return self.buf.toOwnedSlice(self.allocator);
     }
 
     pub fn appendUtf8Unchecked(self: *String, str_buf: []const u8) Allocator.Error!void {
