@@ -1,0 +1,4 @@
+.{
+	.name = "string.zig",
+	.versiob = "0.1.0",
+}
