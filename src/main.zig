@@ -56,6 +56,20 @@ pub const String = struct {
         return String{ .allocator = buf.allocator, .buf = buf.moveToUnmanaged() };
     }
 
+    /// Create a new string from the supplied buffer, using the allocator provided.
+    /// This function validates the string contents before writing them.
+    /// In case the string does not contain valid UTF-8, it returns an error.
+    /// TODO: Actually validate the slice.
+    pub fn fromUtf8(allocator: Allocator, buffer: []const u8) !String {
+        var string_buf = try String.fromUtf8Unchecked(allocator, buffer);
+
+        for (buffer) |char| {
+            _ = char;
+        }
+
+        return string_buf;
+    }
+
     /// Returns length of string in bytes
     pub inline fn len(self: *const String) usize {
         return self.buf.items.len;
@@ -85,6 +99,14 @@ pub const String = struct {
 
     pub fn intoBytes(self: *String) ![]u8 {
         return try self.buf.toOwnedSlice(self.allocator);
+    }
+
+    pub fn appendUtf8Unchecked(self: *String, str_buf: []const u8) Allocator.Error!void {
+        return self.buf.appendSlice(self.allocator, str_buf);
+    }
+
+    pub fn appendStr(self: *String, str_literal: []const u8) Allocator.Error!void {
+        return self.appendUtf8Unchecked(str_literal);
     }
 
     /// Check if all characters are within ascii range.
