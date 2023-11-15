@@ -1,6 +1,4 @@
-const string = @import("string.zig");
-
-pub const String = string.String;
+pub const String = @import("string.zig");
 
 test {
     @import("std").testing.refAllDecls(@This());

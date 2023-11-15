@@ -133,7 +133,7 @@ pub fn isAsciiVectorized(self: *const String) bool {
         const chunk: Chunk = remaining[0..chunk_len].*;
         const mask: Chunk = @splat(0x80);
 
-        if (!@reduce(.And, chunk < mask)) {
+        if (@reduce(.Or, chunk >= mask)) {
             return false;
         }
 
@@ -187,6 +187,7 @@ test "isAscii vs isAsciiVectorized" {
     defer str.deinit();
 
     var timer = try std.time.Timer.start();
+    timer.reset();
     const scalar_ascii = str.isAscii();
     const t2 = timer.lap();
     const vector_ascii = str.isAsciiVectorized();
