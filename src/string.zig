@@ -116,10 +116,36 @@ pub fn isAscii(self: *const String) bool {
     // const res = vec2 > vec1;
 
     for (self.buf.items) |char| {
-        if (char > 127) {
+        if (char >= 128) {
             return false;
         }
     }
+    return true;
+}
+
+pub fn isAsciiVectorized(self: *const String) bool {
+    var remaining = self.toSlice();
+
+    const chunk_len = std.simd.suggestVectorSize(u8) orelse 1;
+    const Chunk = @Vector(chunk_len, u8);
+
+    while (remaining.len >= chunk_len) {
+        const chunk: Chunk = remaining[0..chunk_len].*;
+        const mask: Chunk = @splat(0x80);
+
+        if (!@reduce(.And, chunk < mask)) {
+            return false;
+        }
+
+        remaining = remaining[chunk_len..];
+    }
+
+    for (remaining) |char| {
+        if (char >= 128) {
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -146,4 +172,26 @@ test "test is_ascii" {
     defer my_str.deinit();
 
     std.debug.print("{s}\n", .{my_str.toSlice()});
+}
+
+test "isAscii vs isAsciiVectorized" {
+    const file = try std.fs.cwd().openFile("src/string.zig", .{});
+    defer file.close();
+
+    const contents = try file.readToEndAlloc(testing.allocator, 1000000000000);
+    defer testing.allocator.free(contents);
+
+    std.debug.print("\n{s}\n", .{contents});
+
+    const str = try String.fromUtf8(testing.allocator, contents);
+    defer str.deinit();
+
+    var timer = try std.time.Timer.start();
+    const scalar_ascii = str.isAscii();
+    const t2 = timer.lap();
+    const vector_ascii = str.isAsciiVectorized();
+    const t3 = timer.lap();
+
+    std.debug.print("\nScalar: {}ns {}\n", .{ t2, scalar_ascii });
+    std.debug.print("\nVector: {}ns {}\n", .{ t3, vector_ascii });
 }
