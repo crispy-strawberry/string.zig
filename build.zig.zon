@@ -1,5 +1,5 @@
 .{
-	.name = "string.zig",
+	.name = "string",
 	.version = "0.1.0",
-  .paths = .{""},
+	.paths = .{""},
 }
