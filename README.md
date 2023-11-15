@@ -1,4 +1,4 @@
-# A heap allocated string type
+# An allocated string type
 Inspired by Rust's `String` type.
 Implementation mostly ported from Rust.
 
