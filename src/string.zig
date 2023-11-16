@@ -223,6 +223,13 @@ pub fn toAsciiUppercaseVectorized(self: *String) void {
         const check_2: @Vector(chunk_len, u1) = @bitCast(chunk <= upper_bound);
         const check: @Vector(chunk_len, bool) = @bitCast(check_1 & check_2);
 
+        // An alternative to the above I saw online.
+        // This is quite clever and less verbose but I don't think
+        // this has any performance benefits. (might even harm perf)
+        // const check_1 = chunk >= lower_bound;
+        // const check_2 = chunk <= upper_bound;
+        // const check = @select(bool, check_1, check_2, check_1);
+
         const mask = @select(u8, check, lower_mask, no_mask);
 
         const lowered_str = chunk & mask;
