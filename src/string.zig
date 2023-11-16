@@ -194,6 +194,14 @@ pub fn isAsciiVectorized(self: *const String) bool {
     return true;
 }
 
+pub fn toAsciiUppercase(self: *String) void {
+    _ = self;
+}
+
+pub fn toAsciiLowercase(self: *String) void {
+    _ = self;
+}
+
 pub fn deinit(self: *const String) void {
     ArrayListUnmanaged(u8).deinit(@constCast(&self.buf), self.allocator);
     @constCast(self).* = undefined;
