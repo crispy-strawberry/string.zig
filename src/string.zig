@@ -213,8 +213,8 @@ pub fn toAsciiUppercaseVectorized(self: *String) void {
     const lower_mask: Chunk = @splat(0b11011111);
     const no_mask: Chunk = @splat(0xff);
 
-    const lower_bound: Chunk = @splat(97);
-    const upper_bound: Chunk = @splat(122);
+    const lower_bound: Chunk = @splat(0x61); // 0x61 is a
+    const upper_bound: Chunk = @splat(0x7A); // 0x7A is z
 
     while (remaining.len >= chunk_len) {
         const chunk: Chunk = remaining[0..chunk_len].*;
@@ -226,7 +226,13 @@ pub fn toAsciiUppercaseVectorized(self: *String) void {
         const mask = @select(u8, check, lower_mask, no_mask);
 
         const lowered_str = chunk & mask;
-        _ = lowered_str;
+        remaining[0..chunk_len].* = lowered_str;
+
+        remaining = remaining[chunk_len..];
+    }
+
+    for (0..remaining.len, remaining) |i, char| {
+        remaining[i] = std.ascii.toUpper(char);
     }
 }
 
@@ -288,10 +294,27 @@ test "isAscii vs isAsciiVectorized" {
 }
 
 test "toAsciiUppercase" {
-    var my_str = try String.fromStr(alloc, "Hello World ༼ つ ◕_◕ ༽つ");
-    defer my_str.deinit();
+    const file = try std.fs.cwd().openFile("src/string.zig", .{});
+    defer file.close();
 
-    my_str.toAsciiUppercase();
+    const contents = try file.readToEndAlloc(testing.allocator, 1000000000000);
+    defer alloc.free(contents);
 
-    std.debug.print("\n{s}\n", .{my_str.toSlice()});
+    var str1 = try String.fromUtf8(testing.allocator, contents);
+    defer str1.deinit();
+    var str2 = try String.fromUtf8(alloc, contents);
+    defer str2.deinit();
+
+    var timer = try std.time.Timer.start();
+    str1.toAsciiUppercase();
+    const t2 = timer.lap();
+    str2.toAsciiUppercaseVectorized();
+    const t3 = timer.lap();
+
+    std.debug.print("\n{s}\n", .{str1.toSlice()});
+    std.debug.print("\n{s}\n", .{str2.toSlice()});
+    std.debug.print("\nScalar: {}ns\n", .{
+        t2,
+    });
+    std.debug.print("\nVector: {}ns\n", .{t3});
 }
