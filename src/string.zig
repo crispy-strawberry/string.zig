@@ -44,7 +44,7 @@ pub fn clone(self: String) Allocator.Error!String {
 
 /// A helper function for string literals.
 /// WARNING: This function should only be used with string literals
-/// like `"Hello World"` etc which are guaranteed to be valid utf-8.
+/// like `"Hello World"` etc which are guaranteed to be valid UTF-8.
 /// For general byte arrays, see `fromUtf8` or `fromUtf8Unchecked` instead.
 pub fn fromStr(allocator: Allocator, str_literal: []const u8) Allocator.Error!String {
     return fromUtf8Unchecked(allocator, str_literal);
@@ -77,9 +77,8 @@ pub fn fromUtf8ArrayListUnchecked(buf: ArrayList(u8)) String {
 pub fn fromUtf8(allocator: Allocator, buf: []const u8) StringError!String {
     if (std.unicode.utf8ValidateSlice(buf)) {
         return String.fromUtf8Unchecked(allocator, buf);
-    } else {
-        return error.Utf8ValidationError;
     }
+    return error.Utf8ValidationError;
 }
 
 pub fn fromOwnedSlice(allocator: Allocator, buf: []u8) error.Utf8ValidationError!String {
@@ -99,9 +98,9 @@ pub fn fromOwnedSlice(allocator: Allocator, buf: []u8) error.Utf8ValidationError
 pub fn fromUtf8ArrayList(buf: ArrayList(u8)) StringError!String {
     if (std.unicode.utf8ValidateSlice(buf.items)) {
         return String.fromUtf8ArrayListUnchecked(buf);
-    } else {
-        return error.Utf8ValidationError;
     }
+
+    return error.Utf8ValidationError;
 }
 
 /// Returns length of string in bytes
@@ -135,16 +134,19 @@ pub fn toArrayList(self: *String) ArrayListUnmanaged(u8) {
     return arr;
 }
 
-pub fn intoBytes(self: *String) Allocator.Error![]u8 {
-    return self.buf.toOwnedSlice(self.allocator);
-}
-
 pub fn appendUtf8Unchecked(self: *String, buf: []const u8) Allocator.Error!void {
     return self.buf.appendSlice(self.allocator, buf);
 }
 
 pub fn appendStr(self: *String, str_literal: []const u8) Allocator.Error!void {
     return self.appendUtf8Unchecked(str_literal);
+}
+
+pub fn appendUtf8(self: *String, buf: []const u8) StringError!void {
+    if (std.unicode.utf8ValidateSlice(buf)) {
+        return self.appendUtf8Unchecked(buf);
+    }
+    return error.Utf8ValidationError;
 }
 
 /// Check if all characters are within ascii range.
