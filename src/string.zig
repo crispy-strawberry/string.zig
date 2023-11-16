@@ -28,6 +28,8 @@ pub fn init(allocator: Allocator) String {
     };
 }
 
+/// Creates a new `String` with capacity `cap`.
+/// Returns an error if allocation fails.
 pub fn initCapacity(allocator: Allocator, cap: usize) Allocator.Error!String {
     return String{
         .allocator = allocator,
@@ -35,6 +37,7 @@ pub fn initCapacity(allocator: Allocator, cap: usize) Allocator.Error!String {
     };
 }
 
+/// Clones the current `String`
 pub fn clone(self: String) Allocator.Error!String {
     return String{
         .allocator = self.allocator,
@@ -108,6 +111,7 @@ pub inline fn len(self: *const String) usize {
     return self.buf.items.len;
 }
 
+/// Returns capacity of the string in bytes
 pub inline fn capacity(self: *const String) usize {
     return self.buf.capacity;
 }
