@@ -194,12 +194,22 @@ pub fn isAsciiVectorized(self: *const String) bool {
     return true;
 }
 
+/// Converts all ascii lowercase letters to uppercase
+/// letters, ignoring all other bytes.
 pub fn toAsciiUppercase(self: *String) void {
-    _ = self;
+    var str_slice = self.toSlice();
+
+    for (0..str_slice.len, str_slice) |i, char| {
+        self.buf.items[i] = std.ascii.toUpper(char);
+    }
 }
 
 pub fn toAsciiLowercase(self: *String) void {
-    _ = self;
+    var str_slice = self.toSlice();
+
+    for (0..str_slice.len, str_slice) |i, char| {
+        self.buf.items[i] = std.ascii.toLower(char);
+    }
 }
 
 pub fn deinit(self: *const String) void {
@@ -247,4 +257,13 @@ test "isAscii vs isAsciiVectorized" {
 
     std.debug.print("\nScalar: {}ns {}\n", .{ t2, scalar_ascii });
     std.debug.print("\nVector: {}ns {}\n", .{ t3, vector_ascii });
+}
+
+test "toAsciiUppercase" {
+    var my_str = try String.fromStr(alloc, "Hello World ༼ つ ◕_◕ ༽つ");
+    defer my_str.deinit();
+
+    my_str.toAsciiUppercase();
+
+    std.debug.print("\n{s}\n", .{my_str.toSlice()});
 }
