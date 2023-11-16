@@ -246,6 +246,38 @@ pub fn toAsciiLowercase(self: *String) void {
     }
 }
 
+pub fn toAsciiLowercaseVectorized(self: *String) void {
+    var remaining = self.toSlice();
+
+    const chunk_len = std.simd.suggestVectorSize(u8) orelse 1;
+    const Chunk = @Vector(chunk_len, u8);
+
+    const upper_mask: Chunk = @splat(0b11011111);
+    const no_mask: Chunk = @splat(0xff);
+
+    const lower_bound: Chunk = @splat(0x41); // 0x41 is A
+    const upper_bound: Chunk = @splat(0x5A); // 0x5A is Z
+
+    while (remaining.len >= chunk_len) {
+        const chunk: Chunk = remaining[0..chunk_len].*;
+
+        const check_1: @Vector(chunk_len, u1) = @bitCast(chunk >= lower_bound);
+        const check_2: @Vector(chunk_len, u1) = @bitCast(chunk <= upper_bound);
+        const check: @Vector(chunk_len, bool) = @bitCast(check_1 & check_2);
+
+        const mask = @select(u8, check, upper_mask, no_mask);
+
+        const upper_str = chunk & mask;
+        remaining[0..chunk_len].* = upper_str;
+
+        remaining = remaining[chunk_len..];
+    }
+
+    for (0..remaining.len, remaining) |i, char| {
+        remaining[i] = std.ascii.toLower(char);
+    }
+}
+
 pub fn deinit(self: *const String) void {
     ArrayListUnmanaged(u8).deinit(@constCast(&self.buf), self.allocator);
     @constCast(self).* = undefined;
