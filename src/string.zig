@@ -194,7 +194,7 @@ pub fn isAsciiVectorized(self: *const String) bool {
     return true;
 }
 
-/// Converts all ascii lowercase letters to uppercase
+/// Converts all ascii lowercase letters in the string to uppercase
 /// letters, ignoring all other bytes.
 pub fn toAsciiUppercase(self: *String) void {
     var str_slice = self.toSlice();
@@ -204,6 +204,34 @@ pub fn toAsciiUppercase(self: *String) void {
     }
 }
 
+pub fn toAsciiUppercaseVectorized(self: *String) void {
+    var remaining = self.toSlice();
+
+    const chunk_len = std.simd.suggestVectorSize(u8) orelse 1;
+    const Chunk = @Vector(chunk_len, u8);
+
+    const lower_mask: Chunk = @splat(0b11011111);
+    const no_mask: Chunk = @splat(0xff);
+
+    const lower_bound: Chunk = @splat(97);
+    const upper_bound: Chunk = @splat(122);
+
+    while (remaining.len >= chunk_len) {
+        const chunk: Chunk = remaining[0..chunk_len].*;
+
+        const check_1: @Vector(chunk_len, u1) = @bitCast(chunk >= lower_bound);
+        const check_2: @Vector(chunk_len, u1) = @bitCast(chunk <= upper_bound);
+        const check: @Vector(chunk_len, bool) = @bitCast(check_1 & check_2);
+
+        const mask = @select(u8, check, lower_mask, no_mask);
+
+        const lowered_str = chunk & mask;
+        _ = lowered_str;
+    }
+}
+
+/// Converts all ascii uppercase letters in the string to lowercase
+/// letters, ignoring all other bytes.
 pub fn toAsciiLowercase(self: *String) void {
     var str_slice = self.toSlice();
 
