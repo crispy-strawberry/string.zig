@@ -37,6 +37,17 @@ pub fn initCapacity(allocator: Allocator, cap: usize) Allocator.Error!String {
     };
 }
 
+/// Modifies the `String` so that it can hold ATLEAST `new_cap` elements
+/// Invalidates any pointers if additional memory is required.
+pub fn ensureTotalCapacity(self: *String, new_cap: usize) Allocator.Error!void {
+    return self.buf.ensureTotalCapacity(self.allocator, new_cap);
+}
+
+/// Modifies the `String` so that it can hold EXACTLY `new_cap` elements
+pub fn ensureTotalCapacityPrecise(self: *String, new_cap: usize) Allocator.Error!void {
+    return self.buf.ensureTotalCapacityPrecise(self.allocator, new_cap);
+}
+
 /// Clones the current `String`
 pub fn clone(self: String) Allocator.Error!String {
     return String{
@@ -151,6 +162,36 @@ pub fn appendUtf8(self: *String, buf: []const u8) StringError!void {
         return self.appendUtf8Unchecked(buf);
     }
     return error.Utf8ValidationError;
+}
+
+pub const Writer = std.io.Writer(*String, StringError, appendWrite);
+pub const UncheckedWriter = std.io.Writer(*String, Allocator.Error, appendWriteUnchecked);
+
+/// Returns a writer to the current string
+/// All bytes are validated before being written.
+pub fn writer(self: *String) Writer {
+    return Writer{
+        .context = self,
+    };
+}
+
+/// Returns a writer to the current string
+/// Bytes are NOT validated before being written.
+/// Writing invalid bytes causes undefined behaviour.
+pub fn writerUnchecked(self: *String) UncheckedWriter {
+    return Writer{
+        .context = self,
+    };
+}
+
+fn appendWrite(self: *String, bytes: []const u8) StringError!usize {
+    try self.appendUtf8(bytes);
+    return bytes.len;
+}
+
+fn appendWriteUnchecked(self: *String, bytes: []const u8) error.OutOfMemory!usize {
+    try self.appendUtf8Unchecked(bytes);
+    return bytes.len;
 }
 
 /// Check if all characters are within ascii range.
@@ -356,4 +397,5 @@ test "toAsciiUppercase" {
         t2,
     });
     std.debug.print("\nVector: {}ns\n", .{t3});
+    const str_writer = str1.writer();
 }
