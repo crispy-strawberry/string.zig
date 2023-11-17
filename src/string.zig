@@ -276,8 +276,8 @@ pub fn toAsciiUppercaseVectorized(self: *String) void {
 
         const mask = @select(u8, check, lower_mask, no_mask);
 
-        const lowered_str = chunk & mask;
-        remaining[0..chunk_len].* = lowered_str;
+        const upper_str = chunk & mask;
+        remaining[0..chunk_len].* = upper_str;
 
         remaining = remaining[chunk_len..];
     }
@@ -319,8 +319,8 @@ pub fn toAsciiLowercaseVectorized(self: *String) void {
 
         const mask = @select(u8, check, upper_mask, no_mask);
 
-        const upper_str = chunk & mask;
-        remaining[0..chunk_len].* = upper_str;
+        const lowered_str = chunk & mask;
+        remaining[0..chunk_len].* = lowered_str;
 
         remaining = remaining[chunk_len..];
     }
