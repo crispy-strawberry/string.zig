@@ -14,6 +14,8 @@ pub const StringError = error{
 /// Inspired by Rust's `String`.
 /// Provides various functions that make working
 /// with strings easier.
+/// Also, it provides clear "ownership"
+/// semantics about who owns the string buffer.
 pub const String = @This();
 
 allocator: std.mem.Allocator,
@@ -189,7 +191,7 @@ fn appendWrite(self: *String, bytes: []const u8) StringError!usize {
     return bytes.len;
 }
 
-fn appendWriteUnchecked(self: *String, bytes: []const u8) error.OutOfMemory!usize {
+fn appendWriteUnchecked(self: *String, bytes: []const u8) Allocator.Error!usize {
     try self.appendUtf8Unchecked(bytes);
     return bytes.len;
 }
@@ -237,6 +239,7 @@ pub fn isAsciiVectorized(self: *const String) bool {
 
 /// Converts all ascii lowercase letters in the string to uppercase
 /// letters, ignoring all other bytes.
+/// TODO: replace this with vectorized implementation
 pub fn toAsciiUppercase(self: *String) void {
     var str_slice = self.toSlice();
 
@@ -286,6 +289,7 @@ pub fn toAsciiUppercaseVectorized(self: *String) void {
 
 /// Converts all ascii uppercase letters in the string to lowercase
 /// letters, ignoring all other bytes.
+/// TODO: replace this with vectorized implementation
 pub fn toAsciiLowercase(self: *String) void {
     var str_slice = self.toSlice();
 
@@ -397,5 +401,4 @@ test "toAsciiUppercase" {
         t2,
     });
     std.debug.print("\nVector: {}ns\n", .{t3});
-    const str_writer = str1.writer();
 }
