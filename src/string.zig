@@ -97,11 +97,17 @@ pub fn fromUtf8(allocator: Allocator, buf: []const u8) StringError!String {
     return error.Utf8ValidationError;
 }
 
+/// Creates a string from an owned slice, using the allocator provided.
+/// Returns an error if UTF-8 validation.
 pub fn fromOwnedSlice(allocator: Allocator, buf: []u8) error.Utf8ValidationError!String {
     if (!std.unicode.utf8ValidateSlice(buf)) {
         return error.Utf8ValidationError;
     }
 
+    return fromOwnedSliceUnchecked(allocator, buf);
+}
+
+pub fn fromOwnedSliceUnchecked(allocator: Allocator, buf: []u8) void {
     return String{
         .allocator = allocator,
         .buf = ArrayListUnmanaged(u8).fromOwnedSlice(buf),
@@ -129,10 +135,15 @@ pub inline fn capacity(self: *const String) usize {
     return self.buf.capacity;
 }
 
+/// Returns a slice to the contents of the `String`
+/// The `String` retains ownership of the contents of the slice.
 pub fn toSlice(self: *const String) []u8 {
     return self.buf.items;
 }
 
+/// Caller owns the returned memory.
+/// Empties the `String`, making it safe to call `deinit`
+/// but not necessary.
 pub fn toOwnedSlice(self: *String) Allocator.Error![]u8 {
     return self.buf.toOwnedSlice(self.allocator);
 }
@@ -151,14 +162,24 @@ pub fn toArrayList(self: *String) ArrayListUnmanaged(u8) {
     return arr;
 }
 
+/// Appends to the current `String` without checking if the contents
+/// are valid UTF-8. In case invalid bytes are provided, it is undefined
+/// behaviour.
 pub fn appendUtf8Unchecked(self: *String, buf: []const u8) Allocator.Error!void {
     return self.buf.appendSlice(self.allocator, buf);
 }
 
+/// A helper function to append string literals like - "Hello!" etc
+/// WARNING: This function must only be used with string literals as they are
+/// guaranteed to be valid UTF-8. For general use, see `appendUtf8` or
+/// `appendUtf8Unchecked`
 pub fn appendStr(self: *String, str_literal: []const u8) Allocator.Error!void {
     return self.appendUtf8Unchecked(str_literal);
 }
 
+/// Appends to the `String`, but checks if the buffer contains valid
+/// UTF-8. Returns an error in case of allocation failure or
+/// illegal characters.
 pub fn appendUtf8(self: *String, buf: []const u8) StringError!void {
     if (std.unicode.utf8ValidateSlice(buf)) {
         return self.appendUtf8Unchecked(buf);
@@ -330,6 +351,7 @@ pub fn toAsciiLowercaseVectorized(self: *String) void {
     }
 }
 
+/// Frees all allocated memory.
 pub fn deinit(self: *const String) void {
     ArrayListUnmanaged(u8).deinit(@constCast(&self.buf), self.allocator);
     @constCast(self).* = undefined;
